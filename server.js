@@ -27,6 +27,10 @@ app.route('/upload')
         req.busboy.on('file', function (fieldname, file, filename) {
             console.log("Uploading: " + filename);
 
+            if (!fs.existsSync(__dirname + '/public/')){
+                fs.mkdirSync(__dirname + '/public/');
+            }
+
             //Path where image will be uploaded
             fstream = fs.createWriteStream(__dirname + '/public/' + filename);
             file.pipe(fstream);
@@ -46,6 +50,9 @@ const server = app.listen(PORT, () => {
 
 function sendFileList(ws){
     fs.readdir(__dirname + '/public', (err, files) => {
+
+        if(!files)
+            files = []
 
         ws.send(JSON.stringify(
             {
