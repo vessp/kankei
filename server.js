@@ -13,7 +13,7 @@ const INDEX = path.join(__dirname, 'index.html');
 const app = express()
 app.use(busboy());
 app.use(express.static('public'))
-app.use("/exe", express.static('exe'))
+app.use("/dist", express.static('dist'))
 
 app.route('/')
     .get((req, res) => {
