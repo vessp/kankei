@@ -1,0 +1,35 @@
+<html>
+    <head>
+    </head>
+    <body>
+
+    <div id='server-time'></div>
+
+    <form method='post' action='upload' enctype="multipart/form-data">
+        <input type='file' name='fileUploaded'>
+        <input type='submit'>
+    </form>
+
+      <source src="/song.mp3" type="audio/mp3">
+    Your browser does not support the audio element.
+    </audio>
+
+    <audio controls>
+      <source src="/electric.mp3" type="audio/mp3">
+    Your browser does not support the audio element.
+
+        <script type="text/javascript">
+            var HOST = location.origin.replace(/^http/, 'ws')
+            var ws = new WebSocket(HOST);
+            var el = document.getElementById('server-time');
+
+            ws.onconnect = function (event) {
+              console.log("connected")
+            };
+
+            ws.onmessage = function (event) {
+              el.innerHTML = 'files: ' + event.data;
+            };
+        </script>
+    </body>
+</html>
