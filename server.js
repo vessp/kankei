@@ -5,13 +5,26 @@ const SocketServer = require('ws').Server;
 const path = require('path');
 const busboy = require('connect-busboy'); //middleware for form/file upload
 const fs = require('fs-extra');       //File System - for file manipulation
+const multer = require('multer');
+
+var storage =   multer.diskStorage({
+  destination: function (req, file, callback) {
+    console.log(file);
+    callback(null, './public');
+  },
+  filename: function (req, file, callback) {
+    console.log(file);
+    callback(null, file.originalname);
+  }
+});
+var upload = multer({ storage : storage}).single('audioFile');
 
 const PORT = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
 
 //Server
 const app = express()
-app.use(busboy());
+//app.use(busboy());
 app.use(express.static('public'))
 app.use("/dist", express.static('dist'))
 
@@ -20,9 +33,18 @@ app.route('/')
         res.sendFile(INDEX)
     })
 
-app.route('/upload')
-    .post(function (req, res, next) {
+app.post('/upload', function(req,res){
 
+        console.log(req.raw)
+        upload(req,res,function(err) {
+            if(err) {
+                return res.end("Error uploading file.");
+            }
+            res.redirect("/");
+            yellPlaylist()
+        });
+
+        /*
         var fstream;
         req.pipe(req.busboy);
         req.busboy.on('file', function (fieldname, file, filename) {
@@ -43,13 +65,52 @@ app.route('/upload')
                   });
             });
         });
+        */
     });
+
 
 const server = app.listen(PORT, () => {
     console.log(`Listening on ${ PORT }`)
 });
 
-function sendFileList(ws){
+
+
+//Web Socket
+const wss = new SocketServer({ server });
+var userCount = 0
+
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+  userCount++
+
+  // setInterval(() => {
+  //     wss.clients.forEach((client) => {
+  //       whisperPlaylist(client)
+  //     });
+  //   }, 1000);
+    whisperPlaylist(ws)
+    yellUserCount()
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+        userCount--
+        yellUserCount()
+    });
+
+  ws.on('message', (message) => {
+        console.log('onmessage: ', message)
+        let json = JSON.parse(message)
+        if(json.type == "play")
+        {
+            yellPlay(json.message)
+        }
+    });
+});
+
+
+
+
+function whisperPlaylist(ws){
     fs.readdir(__dirname + '/public', (err, files) => {
 
         if(!files)
@@ -64,31 +125,29 @@ function sendFileList(ws){
     })
 }
 
-//Web Socket
-const wss = new SocketServer({ server });
+function yellPlaylist() {
+    wss.clients.forEach((client) => {
+        whisperPlaylist(client)
+      });
+}
 
-wss.on('connection', (ws) => {
-  console.log('Client connected');
-
-  // setInterval(() => {
-  //     wss.clients.forEach((client) => {
-  //       sendFileList(client)
-  //     });
-  //   }, 1000);
-  sendFileList(ws)
-
-  ws.on('close', () => console.log('Client disconnected'));
-
-  ws.on('message', (message) => {
-        console.log('message: ', message)
-        let json = JSON.parse(message)
-        console.log(json)
-        if(json.type == "play")
-        {
-            wss.clients.forEach((client) => {
-                client.send(message)
-            });
-            
-        }
+function yellPlay(filename) {
+    wss.clients.forEach((client) => {
+        client.send(JSON.stringify(
+            {
+                'type':'play',
+                'message': filename
+            }))
     });
-});
+}
+
+function yellUserCount() {
+    wss.clients.forEach((ws) => {
+        ws.send(JSON.stringify(
+            {
+                'type':'userCount',
+                'message': userCount
+            }
+            ))
+      });
+}
