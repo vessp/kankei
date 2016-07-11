@@ -78,6 +78,7 @@ const server = app.listen(PORT, () => {
 //Web Socket
 const wss = new SocketServer({ server });
 var userCount = 0
+var hangoutsCount = 0
 
 wss.on('connection', (ws) => {
   console.log('Client connected');
@@ -88,6 +89,7 @@ wss.on('connection', (ws) => {
   //       whisperPlaylist(client)
   //     });
   //   }, 1000);
+    whisperVersion(ws)
     whisperPlaylist(ws)
     yellUserCount()
 
@@ -104,11 +106,28 @@ wss.on('connection', (ws) => {
         {
             yellPlay(json.message)
         }
+        else if(json.type == "hangoutsJoin")
+        {
+            hangoutsCount++
+            yellHangoutsCount()
+        }
+        else if(json.type == "hangoutsLeave")
+        {
+            hangoutsCount--
+            yellHangoutsCount()
+        }
     });
 });
 
 
-
+function whisperVersion(ws){
+    ws.send(JSON.stringify(
+    {
+        'type':'version',
+        'message': "1.1"
+    }
+    ))
+}
 
 function whisperPlaylist(ws){
     fs.readdir(__dirname + '/public', (err, files) => {
@@ -147,6 +166,17 @@ function yellUserCount() {
             {
                 'type':'userCount',
                 'message': userCount
+            }
+            ))
+      });
+}
+
+function yellHangoutsCount() {
+    wss.clients.forEach((ws) => {
+        ws.send(JSON.stringify(
+            {
+                'type':'hangoutsCount',
+                'message': hangoutsCount
             }
             ))
       });
