@@ -1,11 +1,12 @@
 'use strict';
 
-const express = require('express');
-const SocketServer = require('ws').Server;
-const path = require('path');
-const busboy = require('connect-busboy'); //middleware for form/file upload
-const fs = require('fs-extra');       //File System - for file manipulation
-const multer = require('multer');
+const express = require('express')
+const SocketServer = require('ws').Server
+const path = require('path')
+const busboy = require('connect-busboy') //middleware for form/file upload
+const fs = require('fs-extra')       //File System - for file manipulation
+const multer = require('multer')
+const DB = require('./app/db')
 
 var storage =   multer.diskStorage({
   destination: function (req, file, callback) {
@@ -19,10 +20,12 @@ var storage =   multer.diskStorage({
 });
 var upload = multer({ storage : storage}).single('audioFile');
 
+
+
+//SERVER--------------------------------------------------------------------------
 const PORT = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
 
-//Server
 const app = express()
 //app.use(busboy());
 app.use(express.static('public'))
@@ -35,38 +38,56 @@ app.route('/')
 
 app.post('/upload', function(req,res){
 
-        console.log(req.raw)
-        upload(req,res,function(err) {
-            if(err) {
-                return res.end("Error uploading file.");
-            }
-            res.redirect("/");
-            yellPlaylist()
-        });
-
-        /*
-        var fstream;
-        req.pipe(req.busboy);
-        req.busboy.on('file', function (fieldname, file, filename) {
-            console.log("Uploading: " + filename);
-
-            if (!fs.existsSync(__dirname + '/public/')){
-                fs.mkdirSync(__dirname + '/public/');
-            }
-
-            //Path where image will be uploaded
-            fstream = fs.createWriteStream(__dirname + '/public/' + filename);
-            file.pipe(fstream);
-            fstream.on('close', function () {    
-                console.log("Upload Finished of " + filename);              
-                res.redirect('back');           //where to go next
-                wss.clients.forEach((client) => {
-                    sendFileList(client)
-                  });
-            });
-        });
-        */
+    console.log(req.raw)
+    upload(req,res,function(err) {
+        if(err) {
+            return res.end("Error uploading file.");
+        }
+        res.redirect("/");
+        yellPlaylist()
     });
+
+    /*
+    var fstream;
+    req.pipe(req.busboy);
+    req.busboy.on('file', function (fieldname, file, filename) {
+        console.log("Uploading: " + filename);
+
+        if (!fs.existsSync(__dirname + '/public/')){
+            fs.mkdirSync(__dirname + '/public/');
+        }
+
+        //Path where image will be uploaded
+        fstream = fs.createWriteStream(__dirname + '/public/' + filename);
+        file.pipe(fstream);
+        fstream.on('close', function () {    
+            console.log("Upload Finished of " + filename);              
+            res.redirect('back');           //where to go next
+            wss.clients.forEach((client) => {
+                sendFileList(client)
+              });
+        });
+    });
+    */
+});
+
+app.post('/audio', function(req, res) {
+    var postData = '';
+    req.on('data', function (chunk) {
+        postData += chunk
+    })
+    req.on('end', function() {
+        postData = JSON.parse(postData)
+        const name = postData.name
+        const data = new Buffer(postData.data)
+        DB.insertAudio(name, data, () => {
+            res.end('success')
+            yellPlaylist()
+        }, () => {
+            res.end('error')
+        })
+    });
+})
 
 
 const server = app.listen(PORT, () => {
@@ -74,8 +95,25 @@ const server = app.listen(PORT, () => {
 });
 
 
+//DATABASE--------------------------------------------------------------------------
+DB.init()
+app.get('/audio/:name', function(req, res){
+    const name = req.params.name
+    DB.selectAudio(name, (fileBytes) => {
+        res.writeHead(200, {
+            'Content-Type': "audio/mpeg",
+            'Content-Disposition': `inline; filename="${name}"`,
+            'Cache-Control': 'no-cache'
+        })
+        res.end(fileBytes);
+    }, (err) => {
+        res.end(err.message);
+    })
+});
 
-//Web Socket
+
+
+//WEB SOCKET--------------------------------------------------------------------------
 const wss = new SocketServer({ server });
 var userCount = 0
 var hangoutsCount = 0
@@ -99,12 +137,12 @@ wss.on('connection', (ws) => {
         yellUserCount()
     });
 
-  ws.on('message', (message) => {
+    ws.on('message', (message) => {
         console.log('onmessage: ', message)
         let json = JSON.parse(message)
         if(json.type == "play")
         {
-            yellPlay(json.message)
+            yellPlay(json.payload)
         }
         else if(json.type == "hangoutsJoin")
         {
@@ -130,24 +168,29 @@ function whisperVersion(ws){
 }
 
 function whisperPlaylist(ws){
-    fs.readdir(__dirname + '/public', (err, files) => {
-
-        if(!files)
-            files = []
-
-        ws.send(JSON.stringify(
-            {
-                'type':'playlist',
-                'message': files
-            }
-            ))
+    DB.queryPlaylist(playlist => {
+        ws.send(JSON.stringify({
+            'type':'playlist',
+            'message': playlist
+        }))
     })
+
+    // fs.readdir(__dirname + '/public', (err, files) => {
+    //     if(!files)
+    //         files = []
+    //     ws.send(JSON.stringify(
+    //         {
+    //             'type':'playlist',
+    //             'message': files
+    //         }
+    //         ))
+    // })
 }
 
 function yellPlaylist() {
     wss.clients.forEach((client) => {
         whisperPlaylist(client)
-      });
+    });
 }
 
 function yellPlay(filename) {
@@ -181,3 +224,5 @@ function yellHangoutsCount() {
             ))
       });
 }
+
+
