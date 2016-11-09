@@ -1,3 +1,5 @@
+'use strict';
+
 var exports = module.exports = {};
 const pg = require('pg')
 const fs = require('fs-extra')
