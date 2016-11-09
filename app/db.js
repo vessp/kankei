@@ -41,14 +41,15 @@ exports.init = () => {
 
         //CREATE TABLE IF NOT EXISTS
         client.query(`CREATE TABLE ${AUDIO_TABLE}(name varchar(64) NOT NULL UNIQUE, data bytea)`, (err) => {
-            if(err) {
-                if(err.code != CODE_TABLE_EXISTS)
-                    console.error(err)
+            const isRealErr = err && err.code != CODE_TABLE_EXISTS
+            if(isRealErr) {
+                console.error(err)
                 onDone()
                 return
             }
-            console.log('DB:: table created')
+            console.log('DB:: table is created')
             fs.readdir('./public', (err, files) => {
+                console.log('DB:: num public files: ' + files.length)
                 files.forEach(name => {
                     fs.open(`./public/${name}`, 'r', (err, fd) => {
                         if (err) { console.log(err, err.message); onDone(); return; }
