@@ -54,7 +54,7 @@ exports.init = () => {
                         if (err) { console.log(err, err.message); onDone(); return; }
                         fs.readFile(fd, function(err, data) {
                             if (err) { console.log(err, err.message); onDone(); return; }
-                            exports.insertAudio(name, data)
+                            exports.insertAudio(name, data, ()=>{}, ()=>{})
                         })
                     })
                 })
