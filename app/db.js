@@ -4,8 +4,9 @@ var exports = module.exports = {};
 const pg = require('pg')
 const fs = require('fs-extra')
 
-const dbUrl = 'pg://postgres:postgres@localhost:5432/postgres'
-// const DB_NAME = 'postgres'
+// const dbUrl = 'pg://postgres:postgres@localhost:5432/postgres'
+const dbUrl = 'postgres://chgssqfyikwunh:xJvzuQy4haharHUumG-ZusSnev@ec2-54-243-204-195.compute-1.amazonaws.com:5432/d2g4p6pr8ufehb'
+
 const AUDIO_TABLE = 'AUDIO'
 
 const CODE_DB_EXISTS = '42P04'
