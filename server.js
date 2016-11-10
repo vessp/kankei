@@ -144,6 +144,14 @@ wss.on('connection', (ws) => {
         {
             yellPlay(json.payload)
         }
+        else if(json.type == "remove")
+        {
+            DB.removeAudio(json.payload, () => {
+                yellPlaylist()
+            }, (err) => {
+                console.log('remove audio error', err)
+            })
+        }
         else if(json.type == "hangoutsJoin")
         {
             hangoutsCount++

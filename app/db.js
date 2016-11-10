@@ -89,6 +89,25 @@ exports.insertAudio = (name, data, onSuccess, onError) => {
     });
 }
 
+exports.removeAudio = (name, onSuccess, onError) => {
+    // console.log('data', data.length)
+    open((client, onDone) => {
+        client.query(`DELETE FROM ${AUDIO_TABLE} WHERE name='${name}'`, (err) => {
+            if(err) { console.error(err); onDone(); onError(err); return; }
+            console.log('deleted ' + name)
+            onSuccess()
+        });
+    })
+
+    fs.writeFile(name, data, (err) => {
+      if (err) {
+          console.error(err)
+          return
+      }
+      console.log('It\'s saved!');
+    });
+}
+
 exports.queryPlaylist = (callback) => {
     open((client, onDone) => {
         var query = client.query(`SELECT name FROM ${AUDIO_TABLE}`)
