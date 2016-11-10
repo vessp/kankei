@@ -80,13 +80,13 @@ exports.insertAudio = (name, data, onSuccess, onError) => {
         });
     })
 
-    fs.writeFile(name, data, (err) => {
-      if (err) {
-          console.error(err)
-          return
-      }
-      console.log('It\'s saved!');
-    });
+    // fs.writeFile(name, data, (err) => {
+    //   if (err) {
+    //       console.error(err)
+    //       return
+    //   }
+    //   console.log('It\'s saved!');
+    // });
 }
 
 exports.removeAudio = (name, onSuccess, onError) => {
@@ -98,14 +98,6 @@ exports.removeAudio = (name, onSuccess, onError) => {
             onSuccess()
         });
     })
-
-    fs.writeFile(name, data, (err) => {
-      if (err) {
-          console.error(err)
-          return
-      }
-      console.log('It\'s saved!');
-    });
 }
 
 exports.queryPlaylist = (callback) => {
