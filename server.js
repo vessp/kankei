@@ -71,6 +71,27 @@ app.post('/upload', function(req,res){
     */
 });
 
+app.get('/apps/:name', function(req, res){
+    const name = req.params.name
+
+    if(name == 'kindred') {
+        res.writeHead(200, {
+            'Content-Type': "application/json",
+            'Cache-Control': 'no-cache'
+        })
+        res.end(JSON.stringify({
+            version: '1.0.0',
+            distPath: '/dist/Kindred-win32-x64.zip'
+        }))
+    }
+    else {
+        res.end(JSON.stringify({
+            success: false,
+            message: 'app with name "' + name + '" not found'
+        }))
+    }
+});
+
 app.post('/audio', function(req, res) {
     var postData = '';
     req.on('data', function (chunk) {
