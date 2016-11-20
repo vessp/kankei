@@ -3,7 +3,7 @@
 var exports = module.exports = {};
 const pg = require('pg')
 const fs = require('fs-extra')
-const {DB_URL} = require('../config')
+const config = require('../config')
 
 const AUDIO_TABLE = 'AUDIO'
 
@@ -11,7 +11,7 @@ const CODE_DB_EXISTS = '42P04'
 const CODE_TABLE_EXISTS = '42P07'
         
 const open = (callback) => {
-    pg.connect(DB_URL, (err, client, onDone) => {
+    pg.connect(config.DB_URL, (err, client, onDone) => {
         if(err) { console.error(err); onDone(); return; }
         // client.query(`CREATE DATABASE ${DB_NAME}`, (err) => {
         //     if(err && err.code != CODE_DB_EXISTS) {
