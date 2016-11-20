@@ -3,9 +3,7 @@
 var exports = module.exports = {};
 const pg = require('pg')
 const fs = require('fs-extra')
-
-// const dbUrl = 'pg://postgres:postgres@localhost:5432/postgres'
-const dbUrl = 'postgres://chgssqfyikwunh:xJvzuQy4haharHUumG-ZusSnev@ec2-54-243-204-195.compute-1.amazonaws.com:5432/d2g4p6pr8ufehb'
+const {DB_URL} = require('../config')
 
 const AUDIO_TABLE = 'AUDIO'
 
@@ -13,7 +11,7 @@ const CODE_DB_EXISTS = '42P04'
 const CODE_TABLE_EXISTS = '42P07'
         
 const open = (callback) => {
-    pg.connect(dbUrl, (err, client, onDone) => {
+    pg.connect(DB_URL, (err, client, onDone) => {
         if(err) { console.error(err); onDone(); return; }
         // client.query(`CREATE DATABASE ${DB_NAME}`, (err) => {
         //     if(err && err.code != CODE_DB_EXISTS) {
@@ -41,25 +39,29 @@ exports.init = () => {
 
         //CREATE TABLE IF NOT EXISTS
         client.query(`CREATE TABLE ${AUDIO_TABLE}(name varchar(64) NOT NULL UNIQUE, data bytea)`, (err) => {
-            const isRealErr = err && err.code != CODE_TABLE_EXISTS
+            const tableAlreadyExisted = err && err.code == CODE_TABLE_EXISTS
+            const isRealErr = err && !tableAlreadyExisted
             if(isRealErr) {
                 console.error(err)
                 onDone()
                 return
             }
             console.log('DB:: table is created')
-            fs.readdir('./public', (err, files) => {
-                console.log('DB:: num public files: ' + files.length)
-                files.forEach(name => {
-                    fs.open(`./public/${name}`, 'r', (err, fd) => {
-                        if (err) { console.log(err, err.message); onDone(); return; }
-                        fs.readFile(fd, function(err, data) {
+            if(!tableAlreadyExisted)
+            {
+                fs.readdir('./public', (err, files) => {
+                    console.log('DB:: num public files: ' + files.length)
+                    files.forEach(name => {
+                        fs.open(`./public/${name}`, 'r', (err, fd) => {
                             if (err) { console.log(err, err.message); onDone(); return; }
-                            exports.insertAudio(name, data, ()=>{}, ()=>{})
+                            fs.readFile(fd, function(err, data) {
+                                if (err) { console.log(err, err.message); onDone(); return; }
+                                exports.insertAudio(name, data, ()=>{}, ()=>{})
+                            })
                         })
                     })
                 })
-            })
+            }
         })
     })
 }
