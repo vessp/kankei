@@ -80,7 +80,7 @@ app.get('/apps/:name', function(req, res){
             'Cache-Control': 'no-cache'
         })
         res.end(JSON.stringify({
-            version: '1.0.0',
+            version: '1.1.0',
             distPath: '/dist/Kindred-win32-x64.zip'
         }))
     }
@@ -110,6 +110,11 @@ app.post('/audio', function(req, res) {
     });
 })
 
+app.get('/play/:name', (req, res) => {
+    const name = req.params.name
+    yellPlay(name)
+    res.end('play message sent!')
+})
 
 const server = app.listen(PORT, () => {
     console.log(`Listening on ${ PORT }`)
