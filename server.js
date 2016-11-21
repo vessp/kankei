@@ -80,7 +80,7 @@ app.get('/apps/:name', function(req, res){
             'Cache-Control': 'no-cache'
         })
         res.end(JSON.stringify({
-            version: '1.1.1',
+            version: '1.1.2',
             distPath: '/dist/Kindred-win32-x64.zip'
         }))
     }
